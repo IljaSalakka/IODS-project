@@ -9,5 +9,14 @@
 date()
 
 ```
-The text continues here.
 
+When I found this course in Sisu, I was immediately interested in its core topics: <span style="color:#ca3120">Open</span> <span style="color:#0f6cbf">Data</span>, <span style="color:#ca3120">Open</span> <span style="color:#357a32">Science</span>, and <span style="color:#0f6cbf">Data</span> <span style="color:#357a32">Science</span>. In this course I hope to learn more about open science in the context of data science. I also hope to get more knowledge in statistics and learn some new tricks with R.
+
+The "crash course" on R and RStudio (based on Exercise set 1) was good memory refresher for me in basic functionality of *tidyverse* and especially *dplyr*. Because I have used R in my statistical analyses for couple of years now, I did not find any parts of the "crash course" very difficult. However, I find the use of *tidyverse* very pleasing, while being little bit different from basic R syntax.
+
+The book is nice and reminds me of another good book <a href="https://r4ds.had.co.nz/">R for Data Science</a> by Wickham and Grolemund.
+
+I am really waiting to see what this course has to offer!
+
+
+<a href="https://github.com/IljaSalakka/IODS-project">My GitHub repository can be found here</a>.
