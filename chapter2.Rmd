@@ -1,4 +1,4 @@
-# Insert chapter 2 title here
+# Assignment 2: Regression and model validation
 
 *Describe the work you have done this week and summarize your learning.*
 
@@ -10,4 +10,56 @@
 date()
 ```
 
-Here we go again...
+## Libraries
+```{r}
+library(psych)
+```
+
+## Reading the data
+```{r}
+setwd("C:/LocalData/salailja/IODS/IODS-project")
+lrn14_sub <- read.csv("data/lrn14_sub.csv", sep=",", header=TRUE)
+dim(lrn14_sub)
+str(lrn14_sub)
+lrn14_sub$gender <- as.factor(lrn14_sub$gender)
+```
+The dataset used here is part of larger dataset that consists of questions regarding learning approaches. It consists of 7 variables: 2 demographic (gender, age), 3 measuring learning approaches (deep learning, surface learning, strategic learning), attitude towards statistics, and exam points in a statistics course. Learning approach variables and attitude are combination variables averaged from multiple questions measuring the same dimension. When dropping rows with 0 exam points, there is total of 166 observations. Gender is character type and is changed to factor type due to upcoming analyses. Other variables are integer or numeric type.
+
+## Graphical overview of the data
+```{r}
+pairs.panels(lrn14_sub[-1])
+summary(lrn14_sub)
+```
+Here, distributions and relationships between variables can be seen in graphical way (gender excluded, because of its categorical nature). Based on visual inspection, distributions are relatively close to normal, except age, which is clearly right-skewed. All relationships look quite linear, indicating that linear model is suitable here. Correlations between variables are from non-existent (deep vs. points = -0.01) to moderate (attitude vs. points = 0.44).
+
+Also basic summary statistics regarding variables are provided. From here we can inspect that median age for participants is 22 years and the data consists of 110 females and 56 males.
+
+
+## Fitting multiple regression model
+I selected attitude as explaining variable because of its highest correlation with exam points. In addition I included gender and age as to the model to see if demographic variables have any statistical relationship to exam points.
+```{r}
+model1 <- lm(points ~ gender + age + attitude, data = lrn14_sub)
+summary(model1)
+```
+The first fitted model had only one statistically significant explanatory variable, attention. Gender and age had no statistically significant relationship to exam points (p-values clearly over 0.05). Therefore, second model were created where the variable with weakest relationship to exam points (gender) was dropped.
+
+```{r}
+model2 <- lm(points ~ age + attitude, data = lrn14_sub)
+summary(model2)
+```
+As we can see from the results, dropping gender out from the model did not change much the results regarding age, which is still not even close to statistical significance (p = 0.144). Thus, age was also dropped and third model was created with only attention as explanatory variable.
+
+```{r}
+model3 <- lm(points ~ attitude, data = lrn14_sub)
+summary(model3)
+```
+Here we can see our final model with only one explanatory variable, attention towards statistics. It has clear statistical relationship to exam points with very low p-value. In addition, seen from R-squared values of the model, attention towards statistics is able to explain around 19 % of the variance in exam points. This is not surprising, because it was expected that attention towards statistics is somehow related to statistics exam scores.
+
+## Diagnostic plots
+Because I created multiple models, I will produce the diagnostic plots for the starting point (model 1) and the final model (model 3). The regression model assumptions inspected here are constant variance and linearity, normality (of residuals) and lack of too influential outliers.
+```{r}
+plot(model1, which = c(1,2,5))
+plot(model3, which = c(1,2,5))
+```
+As can be seen from the plots, these two models do not differ much from each other in model diagnostics. Residual vs fitted plot shows that aside 3 (kind of) outliers, the variance is quite constant across fitted values. There is some decrease in variance when fitted values are high, but this is based on just few observations so I don't see it as a big problem. Q-Q plot do not show clear deviance from normality. It is normal to see some deviance in end points and this does not pose any real problem for model assumptions. The residuals vs leverage plot does show us that there are no single outliers that are too influential to the model. Overall, based on visual inspection of diagnostic plots, assumptions for regression model were not violated.
+
