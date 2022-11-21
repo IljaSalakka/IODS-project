@@ -1,0 +1,61 @@
+# Assignment 3: Logistic regression
+
+
+```{r}
+date()
+```
+
+### Libraries
+```{r}
+library(tidyverse)
+```
+
+### Reading the data and printing the dimensions and variable names
+```{r}
+setwd("C:/LocalData/salailja/IODS/IODS-project")
+alc <- read_csv("data/alc.csv")
+dim(alc)
+colnames(alc)
+```
+The dataset consists of demographical information (including alcohol consumption) and student grades collected from two secondary education subjects (mathematics and Portuguese language) over 3 periods. The dataset has 35 variables and 370 observations.
+
+### Selecting variables and presenting hypothesis
+For studying high alcohol consumption, I will select romantic relationship status, weekly study time, final grade, and number of school absences for predictors.
+```{r}
+vars <- c("romantic", "studytime", "G3", "absences", "high_use")
+```
+My hypothesis is that absence of romantic relationship, low weekly study time, low final grade, and high number of school absences are risk factors for heavy alcohol use.
+
+### Distributions of the chosen variables and their relationships
+```{r}
+data <- select(alc, all_of(vars)) # Create data with only chosen variables
+table(data$romantic, data$high_use)
+table(data$studytime, data$high_use)
+ggplot(data = data, aes(x = high_use, y = G3)) + geom_boxplot()
+ggplot(data = data, aes(x = high_use, y = absences)) + geom_boxplot()
+```
+- The cross-tabulations between romantic and high_use, we can see that the relationship between these variables is not immediately clear. There are more participants who are not in relationship, but in both groups the proportion of heavy alcohol users seems to be around the same.
+- The cross-tabulation between studytime and high_use, in turn, reveals clear relationship between time spent in studying and use of alcohol. Most of the participants study 2-5 hours or less.
+- The boxplot between final grades and alcohol use reveals little bit lower average scores in high alcohol use group when compared to low alcohol use group. As an important notion, the variance is also smaller in high alcohol users.
+- The boxplot between number of school absences and alcohol use reveals that in high alcohol users group there are more school absences on average than in low alcohol users group. In both groups the distribution is highly skewed, which is not surprising.
+- The inspection of cross-tabulations and boxplots gives tentative support for my hypothesis, with the exception of romantic relationship.
+
+### Logistic regression
+```{r}
+model1 <- glm(high_use ~ romantic + studytime + G3 + absences, data = data, family = "binomial")
+summary(model1)
+or <- exp(coef(model1)) # odds ratios
+ci <- exp(confint(model1)) # confidence intervals
+cbind(or, ci)
+```
+According to model summary, higher number of absences and less study time are statistically related to heavy alcohol use. Final grade scores and romantic relationship are not statistically related to heavy alcohol use after accounting for effects of number of absences and study time. Inspecting odds ratios and their confidence intervals shows same story. The odds of people having x+1 number of absence being heavy alcohol users is between about 104% and 113% of the odds of people having x number of absence. Also, the odds of people in one higher study time category being heavy alcohol users is between about 43% and 80% of the odds of people in one lower study time category.
+
+### Predictive power of the model with only statistically significant predictors
+```{r}
+model2 <- glm(high_use ~ studytime + absences, data = data, family = "binomial") # model with only statistically significant predictors
+probabilities <- predict(model2, type = "response")
+data <- mutate(data, probability = probabilities)
+data <- mutate(data, prediction = probability > 0.5)
+table(high_use = data$high_use, prediction = data$prediction) %>% prop.table() %>% addmargins()
+```
+The model seems to classify most of the cases correctly and clearly better than just by simple guessing strategy. However, there are around 30% of incorrectly classified cases.
