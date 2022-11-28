@@ -1,0 +1,150 @@
+# Assignment 4: Clustering and classification
+
+```{r}
+date()
+```
+
+### Libraries
+```{r}
+library(psych)
+library(tidyverse)
+library(MASS)
+library(corrplot)
+library(GGally)
+```
+
+### Exploring the data
+```{r}
+data("Boston")
+dim(Boston)
+str(Boston)
+```
+
+The data describes the housing values in suburbs of Boston. It contains 506 observations and 14 variables.
+
+```{r}
+pairs.panels(Boston)
+summary(Boston)
+```
+
+The distributions of the variables are various. Only variable rm seems to be approximately normally distributed. All of the other variables are either highly skewed, dichotomical or have multiple peaks.
+
+### Scaling the whole dataset
+```{r}
+boston_scaled <- scale(Boston)
+boston_scaled <- as.data.frame(boston_scaled) # data frame
+pairs.panels(boston_scaled)
+summary(boston_scaled)
+```
+
+The variables are now scaled to have mean = 0 and sd = 1.
+
+### Test and train datasets
+```{r}
+bins <- quantile(boston_scaled$crim)
+crime <- cut(boston_scaled$crim, breaks = bins, include.lowest = TRUE)
+boston_scaled$crim <- crime
+
+n <- nrow(boston_scaled)
+ind <- sample(n,  size = n * 0.8)
+train <- boston_scaled[ind,]
+test <- boston_scaled[-ind,]
+```
+
+### Linear discriminant analysis
+```{r}
+
+lda.fit <- lda(crim ~ ., data = train)
+
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+classes <- as.numeric(train$crim)
+
+plot(lda.fit, dimen = 2)
+lda.arrows(lda.fit, myscale = 1)
+```
+
+Looks like rad (index of accessibility to radial highways) has quite strongly its own dimension whereas other dimensions are more grouped together.
+
+### Predict crime classes with the LDA model
+```{r}
+correct_classes <- test$crim
+test <- dplyr::select(test, -crim)
+
+lda.pred <- predict(lda.fit, newdata = test)
+table(correct = correct_classes, predicted = lda.pred$class)
+```
+
+The model predicts most of the classes correctly, and when it does not, it usually predicts the observation to neighbour classes. The extreme classes are predicted little bit better than the middle classes.
+
+### Clustering the data
+
+First with 3 clusters.
+```{r}
+boston_scaled <- scale(Boston)
+boston_scaled <- as.data.frame(boston_scaled) # data frame
+
+dist_eu <- dist(boston_scaled, method = "euclidean")
+dist_man <- dist(boston_scaled, method = "manhattan")
+
+km <- kmeans(boston_scaled, centers = 3)
+pairs(boston_scaled, col = km$cluster)
+```
+With 4 clusters.
+```{r}
+km <- kmeans(boston_scaled, centers = 4)
+pairs(boston_scaled, col = km$cluster)
+```
+
+With 5 clusters.
+```{r}
+km <- kmeans(boston_scaled, centers = 5)
+pairs(boston_scaled, col = km$cluster)
+```
+
+Visually it seems that the best amount of clusters is 4. With 5 clusters there are too much overlapping and some clusters do not have clear groups in any of the bivariate scatterplots.
+
+Lets check if this interpretation holds with total within sum of squares analysis.
+
+```{r}
+k_max <- 5
+
+# calculate the total within sum of squares
+twcss <- sapply(1:k_max, function(k){kmeans(boston_scaled, k)$tot.withinss})
+
+qplot(x = 1:k_max, y = twcss, geom = 'line')
+```
+
+By visual inspection of the total within sum of squares plot, it seems that optimal number of clusters is probably 3.
+
+### Bonus
+```{r}
+boston_scaled <- scale(Boston)
+boston_scaled <- as.data.frame(boston_scaled) # data frame
+
+km <- kmeans(boston_scaled, centers = 3)
+boston_scaled$cluster <- km$cluster
+
+lda.fit <- lda(cluster ~ ., data = boston_scaled)
+
+lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
+  heads <- coef(x)
+  arrows(x0 = 0, y0 = 0, 
+         x1 = myscale * heads[,choices[1]], 
+         y1 = myscale * heads[,choices[2]], col=color, length = arrow_heads)
+  text(myscale * heads[,choices], labels = row.names(heads), 
+       cex = tex, col=color, pos=3)
+}
+
+plot(lda.fit, dimen = 2)
+lda.arrows(lda.fit, myscale = 1)
+```
+
+It seems that nox (nitrogen oxides concentration (parts per 10 million)), tax (full-value property-tax rate per $10,000), age (proportion of owner-occupied units built prior to 1940), and zn (proportion of residential land zoned for lots over 25,000 sq.ft) are most influential variables on the 3 cluster model used here.
