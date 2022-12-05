@@ -1,0 +1,71 @@
+# Assignment 5: Dimensionality reduction techniques
+
+```{r}
+date()
+```
+
+### Libraries
+```{r}
+library(tidyverse)
+library(psych)
+library(corrplot)
+library(FactoMineR)
+```
+### Load the data
+```{r}
+setwd("C:/LocalData/salailja/IODS/IODS-project/")
+human <- read_csv("data/humandata.csv")
+```
+
+### Overview of the data
+```{r}
+multi.hist(human, global = F)
+pairs(human)
+corrplot(cor(human))
+summary(human)
+```
+
+Many of the variables are quite skewed (especially GNI), and many of them are strongly correlated to each other, which is not surprising. There are also some non-linear tendencies between some variables, such as Edu.Exp (Expected years of schooling) and Mat.Mor (Maternal mortality ratio).
+
+### Principal component analysis with biplot
+```{r}
+pca_human <- prcomp(human)
+biplot(pca_human, choices = 1:2)
+```
+
+It seems that GNI and Mat.Mor are the main sources of variability related to first two principal components. This is not surprising, since both of these variables are highly skewed and thus are likely to be much more responsible of the shared variance than the other variables.
+
+### Repeating PCA with standardized variables
+```{r}
+human_std <- scale(human)
+pca_human_std <- prcomp(human_std)
+biplot(pca_human_std, choices = 1:2)
+```
+
+The plot is clearly different from the previous one, and the reason was described above. Standardization scaled the variables to same scale, and therefore GNI and Mat.Mor are not so much responsible of the variance anymore. In the latter biplot, GNI seems to have more clear loadings in two main components.
+
+One can see that the two main components tell us about the socioeconomics (PC1) and gender equality (PC2). From the gender equality axis it looks like that Rwanda and Burundi have high percentage of females in parliament and in the labour force, whereas in Iran and Yemen the rate is low. From the socioeconomical axis it can be seen that Niger and Chad, for example, have high maternal mortality and adolescent birth rate, but low life expectancy and expected years of schooling. In the other end, there are for example Venezuela and Iran, which is also low in gender equality. From here, we can see that these two components are clearly not enough to tell us about the variance between countries.
+
+### Multiple Correspondence Analysis on the tea data
+```{r}
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE) # Load the tea data
+str(tea); dim(tea)
+#View(tea)
+pivot_longer(tea, cols = 1:6) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") + geom_bar() + labs(title = "When")
+pivot_longer(tea, cols = 7:12) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") + geom_bar() + labs(title = "Where")
+pivot_longer(tea, cols = 13:18) %>% 
+  ggplot(aes(value)) + facet_wrap("name", scales = "free") + geom_bar() + labs(title = "What")
+```
+
+We can see that the most usual times for drinking tea are tea time and breakfast and it is usually enjoyed with friends and/or in home. As an important, but frightful, observation, around half of the people put sugar in their tea. Lets use the "What" part in the MCA analysis.
+
+```{r}
+tea_what <- tea[,13:18]
+mca <- MCA(tea_what, graph = F)
+summary(mca)
+plot(mca, invisible=c("ind"), graph.type = "classic", habillage = "quali")
+```
+
+The x-axis (Dim 1) clearly shows some kind of "hifi" tea factor, with upscale price and tea shop in the high end. Y-axis (Dim 2) in turn possibly shows how picky one is in their selection of particular tea, with less specific answers in the lower end.
