@@ -77,7 +77,7 @@ ggplot(rats_sum, aes(x = Group, y = mean)) +
 ```
 From this boxplot we can clearly see the large difference between group 1 and other groups, and the smaller difference between groups 2 and 3.
 
-Let's use ANOVA to test these differences (while being little bit dumb since the differences can be seen very clearly from the plot in this situation)
+Let's use ANOVA to test these differences.
 ```{r}
 fit <- lm(weight ~ Group, data = rats)
 anova(fit)
